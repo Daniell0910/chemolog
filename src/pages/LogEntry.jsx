@@ -2,40 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
-
-const SYMPTOMS = [
-  { key: 'nausea', label: 'Nausea', emoji: '🤢', desc: 'Feeling sick to your stomach' },
-  { key: 'fatigue', label: 'Fatigue', emoji: '😴', desc: 'Low energy, exhaustion' },
-  { key: 'pain', label: 'Pain', emoji: '😣', desc: 'Body aches, headaches, soreness' },
-  { key: 'neuropathy', label: 'Neuropathy', emoji: '🫠', desc: 'Tingling, numbness in hands/feet' },
-  { key: 'appetite_loss', label: 'Appetite loss', emoji: '🍽️', desc: 'Reduced desire to eat' },
-  { key: 'mood', label: 'Low mood', emoji: '😔', desc: 'Sadness, anxiety, frustration' },
-]
-
-function Slider({ value, onChange, color }) {
-  return (
-    <div style={{ position: 'relative', width: '100%' }}>
-      <input
-        type="range" min={0} max={10} step={1} value={value} onChange={e => onChange(Number(e.target.value))}
-        style={{
-          width: '100%', height: 6, appearance: 'none', background: `linear-gradient(to right, ${color} ${value * 10}%, #E8E8E4 ${value * 10}%)`,
-          borderRadius: 3, outline: 'none', cursor: 'pointer',
-        }}
-      />
-      <style>{`
-        input[type=range]::-webkit-slider-thumb {
-          appearance: none; width: 22px; height: 22px; border-radius: 50%;
-          background: white; border: 2.5px solid ${color}; cursor: pointer;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-        }
-        input[type=range]::-moz-range-thumb {
-          width: 22px; height: 22px; border-radius: 50%;
-          background: white; border: 2.5px solid ${color}; cursor: pointer;
-        }
-      `}</style>
-    </div>
-  )
-}
+import { SYMPTOMS, COLORS } from '../lib/constants'
 
 export default function LogEntry() {
   const { user } = useAuth()
@@ -47,6 +14,7 @@ export default function LogEntry() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [cycle, setCycle] = useState('')
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
 
   const update = (key, val) => setSymptoms(prev => ({ ...prev, [key]: val }))
@@ -65,15 +33,39 @@ export default function LogEntry() {
       setError(err.message)
       setSaving(false)
     } else {
-      nav('/dashboard')
+      setSaved(true)
+      setTimeout(() => nav('/dashboard'), 1200)
     }
   }
 
-  const colors = ['#2A9D8F', '#E76F51', '#E9C46A', '#264653', '#F4A261', '#6B7280']
+  if (saved) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#F4F4F2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
+          <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, fontWeight: 400, marginBottom: 8 }}>Entry saved</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>Redirecting to dashboard...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#F4F4F2' }}>
-      {/* Nav */}
+      {/* Slider thumb CSS — single global instance */}
+      <style>{`
+        input[type=range] { appearance: none; -webkit-appearance: none; outline: none; cursor: pointer; }
+        input[type=range]::-webkit-slider-thumb {
+          appearance: none; -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+          background: white; border: 2.5px solid var(--slider-color, #2A9D8F); cursor: pointer;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        input[type=range]::-moz-range-thumb {
+          width: 22px; height: 22px; border-radius: 50%;
+          background: white; border: 2.5px solid var(--slider-color, #2A9D8F); cursor: pointer;
+        }
+      `}</style>
+
       <nav style={{
         background: 'var(--card)', borderBottom: '1px solid var(--border)',
         padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -98,7 +90,6 @@ export default function LogEntry() {
           Rate each symptom from 0 (none) to 10 (worst). Be honest — this is for you.
         </p>
 
-        {/* Date + cycle */}
         <div style={{ display: 'flex', gap: 14, marginBottom: 28 }}>
           <div style={{ flex: 2 }}>
             <label style={styles.label}>Date</label>
@@ -110,7 +101,6 @@ export default function LogEntry() {
           </div>
         </div>
 
-        {/* Symptom sliders */}
         <div style={{
           background: 'var(--card)', borderRadius: 18, padding: '28px 24px',
           border: '1px solid var(--border)', marginBottom: 20,
@@ -129,12 +119,21 @@ export default function LogEntry() {
                   minWidth: 32, textAlign: 'right',
                 }}>{symptoms[s.key]}</span>
               </div>
-              <Slider value={symptoms[s.key]} onChange={v => update(s.key, v)} color={colors[i]} />
+              <input
+                type="range" min={0} max={10} step={1}
+                value={symptoms[s.key]}
+                onChange={e => update(s.key, Number(e.target.value))}
+                style={{
+                  '--slider-color': COLORS[i],
+                  width: '100%', height: 6,
+                  background: `linear-gradient(to right, ${COLORS[i]} ${symptoms[s.key] * 10}%, #E8E8E4 ${symptoms[s.key] * 10}%)`,
+                  borderRadius: 3,
+                }}
+              />
             </div>
           ))}
         </div>
 
-        {/* Notes */}
         <div style={{
           background: 'var(--card)', borderRadius: 18, padding: '24px',
           border: '1px solid var(--border)', marginBottom: 20,

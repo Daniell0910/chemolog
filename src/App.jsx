@@ -4,6 +4,9 @@ import Landing from './pages/Landing'
 import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
 import LogEntry from './pages/LogEntry'
+import Report from './pages/Report'
+import Medications from './pages/Medications'
+import Guide from './pages/Guide'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -24,9 +27,13 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Auth mode="login" />} />
         <Route path="/signup" element={<Auth mode="signup" />} />
+        <Route path="/guide" element={<Guide />} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/log" element={<ProtectedRoute><LogEntry /></ProtectedRoute>} />
+        <Route path="/report" element={<ProtectedRoute><Report /></ProtectedRoute>} />
+        <Route path="/medications" element={<ProtectedRoute><Medications /></ProtectedRoute>} />
       </Routes>
     </AuthProvider>
   )
 }
+
